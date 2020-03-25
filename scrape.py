@@ -1,18 +1,29 @@
 from bs4 import BeautifulSoup
 import requests
 import json
-
+import os
 from flask import Flask, render_template
 
 app = Flask(__name__)
+def savetofile(key, data):
+    key = 'data/'+key
+    if os.path.isfile(key):
+        return
+    else:
+        f = open(key, "w")
+        f.write(str(data))
+        f.close()
+        return
 
 def scrape():
     base_url = "https://www.mohfw.gov.in/"
     get = requests.get(base_url)
     soup = BeautifulSoup(get.text, "html.parser")
-    print("writing...")
     state_Data = []
     tb = soup.findAll('table', class_='table')[-1]
+    data_upload_time = soup.select_one(".newtab").findChildren("strong", recursive=True)[0].string
+    key = (data_upload_time.split()[5]+'_'+data_upload_time.split()[7]).replace(':','')
+
     for tr in tb.find_all('tr'):
         if(tr.find_all("td")):
             cols = tr.find_all("td")
@@ -34,8 +45,9 @@ def scrape():
                     "cured":cols[4].text,
                     "death":cols[5].text
                 })
-    
-    return json.dumps(state_Data)
+    result = json.dumps(state_Data)
+    savetofile(key, result)
+    return result
 
 @app.route('/')
 def index():
