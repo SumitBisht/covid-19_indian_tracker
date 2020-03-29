@@ -1,0 +1,41 @@
+<html>
+    <head>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/chart.js@2.8.0"></script>
+        <style>
+            .container {
+              width: 20%;
+              margin: 15px auto;
+            }
+        </style>
+    </head>
+    <body>
+        <p>COVID-19</p>
+        <div class="container">
+            <canvas id="myChart"></canvas>
+        </div>
+        <script type="text/javascript">
+            $.ajax({
+                url: "https://corona.lmao.ninja/all",
+                success: function(resp){
+                    var ctx = document.getElementById("myChart").getContext('2d');
+                    var myChart = new Chart(ctx, {
+                      type: 'pie',
+                      data: {
+                        labels: ["Recovered", "Infected", "Deaths"],
+                        datasets: [{
+                          backgroundColor: [
+                            "#2ecc71",
+                            "#f1c40f",
+                            "#e74c3c"
+                          ],
+                          data: [resp.recovered, resp.active, resp.deaths]
+                        }]
+                      }
+                    });
+                }
+            });
+
+        </script>
+    </body>
+</html>
