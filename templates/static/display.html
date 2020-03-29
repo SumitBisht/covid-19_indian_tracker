@@ -7,14 +7,70 @@
               width: 20%;
               margin: 15px auto;
             }
+			td, th { border: 1px solid #111; padding: 6px; }
+			th { 
+			font-weight: 700;
+			cursor: pointer;
+			}
         </style>
     </head>
     <body>
         <p>COVID-19</p>
         <div class="container">
+            <p>Global Stats</p>
             <canvas id="myChart"></canvas>
         </div>
+        <div class="details">
+            <p>Cases By Country</p>
+            <div class="detail"></div>
+        </div>
         <script type="text/javascript">
+		jQuery.fn.sortElements = (function(){
+ 
+			var sort = [].sort;
+		 
+			return function(comparator, getSortable) {
+		 
+				getSortable = getSortable || function(){return this;};
+		 
+				var placements = this.map(function(){
+		 
+					var sortElement = getSortable.call(this),
+						parentNode = sortElement.parentNode,
+		 
+						// Since the element itself will change position, we have
+						// to have some way of storing its original position in
+						// the DOM. The easiest way is to have a 'flag' node:
+						nextSibling = parentNode.insertBefore(
+							document.createTextNode(''),
+							sortElement.nextSibling
+						);
+		 
+					return function() {
+		 
+						if (parentNode === this) {
+							throw new Error(
+								"You can't sort elements if any one is a descendant of another."
+							);
+						}
+		 
+						// Insert before flag:
+						parentNode.insertBefore(this, nextSibling);
+						// Remove flag:
+						parentNode.removeChild(nextSibling);
+		 
+					};
+		 
+				});
+		 
+				return sort.call(this, comparator).each(function(i){
+					placements[i].call(getSortable.call(this));
+				});
+		 
+			};
+		 
+		})();
+
             $.ajax({
                 url: "https://corona.lmao.ninja/all",
                 success: function(resp){
@@ -35,7 +91,47 @@
                     });
                 }
             });
+            $.ajax({
+                url: "https://corona.lmao.ninja/countries?sort=cases",
+                success: function(data){
+                    var tbl = $('<table class="cases"></table>');
+                    var header=$('<th class="sortable">Country</th><th class="sortable">Cases</th><th class="sortable">Deaths</th><th class="sortable">Recovered</th>');
+                    tbl.append(header);
+                    $.each(data, function(i, country){
+                        var row = $('<tr>').append(
+                            $('<td>').text(country['country']),
+                            $('<td>').text(country['cases']),
+                            $('<td>').text(country['deaths']),
+                            $('<td>').text(country['recovered']),
+                        );
+                        tbl.append(row);
+                    });
+                    $('.detail').empty();
+                    $('.detail').append(tbl);
 
+                    $('.sortable')
+                    .wrapInner('<span title="sort this column"/>')
+                    .each(function(){
+                        var th = $(this),
+                            thIndex = th.index(),
+                            inverse = false;
+                        th.click(function(){
+                            $('.cases').find('td').filter(function(){
+                                return $(this).index() === thIndex;
+                            }).sortElements(function(a, b){
+								if(!isNaN(a)){
+									return (parseInt(a)>parseInt(b))? inverse ? -1 : 1: inverse ? 1 : -1;
+								}
+                                return $.text([a]) > $.text([b]) ?
+                                    inverse ? -1 : 1 : inverse ? 1 : -1;
+                            }, function(){
+                                return this.parentNode;
+                            });
+                            inverse = !inverse;
+                        });
+                    });
+                }
+            });
         </script>
     </body>
 </html>
